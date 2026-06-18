@@ -1,0 +1,1800 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>新生儿黄疸居家监测</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <style>
+        /* ===== CSS Variables ===== */
+        :root {
+            --primary: #F48FB1;
+            --primary-light: #FCE4EC;
+            --primary-dark: #D81B60;
+            --secondary: #80DEEA;
+            --secondary-light: #E0F7FA;
+            --bg: #FFF8F0;
+            --card: #FFFFFF;
+            --text: #333333;
+            --text-light: #757575;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --radius: 20px;
+            --radius-sm: 12px;
+            --max-width: 420px;
+            --safe-bottom: env(safe-area-inset-bottom, 16px);
+        }
+
+        /* ===== Reset & Base ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 12px;
+        }
+        .app-container {
+            max-width: var(--max-width);
+            width: 100%;
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            position: relative;
+            padding-bottom: 110px;
+        }
+
+        /* ===== 通用 ===== */
+        .page {
+            display: none;
+            padding: 20px 18px 100px;
+            animation: fadeIn 0.35s ease;
+        }
+        .page.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow);
+            padding: 18px 16px;
+            margin-bottom: 16px;
+            border: 1px solid #f5f5f5;
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title .icon {
+            font-size: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .form-group .hint {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+        .form-row {
+            display: flex;
+            gap: 12px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #f0e8e0;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            background: #fafaf8;
+            transition: border 0.2s;
+            outline: none;
+            color: var(--text);
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        input:focus,
+        select:focus {
+            border-color: var(--primary);
+            background: #fff;
+        }
+        input::placeholder {
+            color: #bbb;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+            width: 100%;
+            background: var(--primary);
+            color: #fff;
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #F48FB1, #EC407A);
+            color: #fff;
+        }
+        .btn-primary:active {
+            opacity: 0.85;
+        }
+        .btn-secondary {
+            background: var(--secondary);
+            color: #333;
+        }
+        .btn-secondary:active {
+            opacity: 0.8;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary-dark);
+        }
+        .btn-outline:active {
+            background: var(--primary-light);
+        }
+        .btn-danger {
+            background: #EF5350;
+            color: #fff;
+        }
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 14px;
+            width: auto;
+        }
+        .btn-block {
+            width: 100%;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        /* ===== 登录页 ===== */
+        #loginPage {
+            padding: 40px 24px 60px;
+            text-align: center;
+            background: linear-gradient(160deg, #FFF5F7 0%, #E8F5F9 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #loginPage .logo {
+            font-size: 52px;
+            margin-bottom: 8px;
+        }
+        #loginPage h1 {
+            font-size: 26px;
+            color: var(--primary-dark);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        #loginPage .sub {
+            color: var(--text-light);
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+        #loginPage .login-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius);
+            padding: 32px 24px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+            width: 100%;
+            max-width: 360px;
+        }
+        #loginPage .login-card .form-group {
+            text-align: left;
+        }
+        #loginPage .login-card .btn {
+            margin-top: 8px;
+        }
+        .login-error {
+            color: #EF5350;
+            font-size: 13px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        /* ===== 主界面头部 ===== */
+        .app-header {
+            background: linear-gradient(135deg, #FFF5F7, #E8F5F9);
+            padding: 18px 18px 14px;
+            border-bottom: 1px solid #f0e8e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(6px);
+        }
+        .app-header .user {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        .app-header .user strong {
+            color: var(--primary-dark);
+        }
+        .app-header .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 13px;
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.04);
+        }
+        .app-header .logout-btn:active {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        /* ===== Tabs ===== */
+        .tabs {
+            display: flex;
+            background: #f5f0ec;
+            border-radius: var(--radius-sm);
+            padding: 4px;
+            margin-bottom: 16px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px 0;
+            text-align: center;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.25s;
+            border: none;
+            background: transparent;
+        }
+        .tab.active {
+            background: var(--card);
+            color: var(--primary-dark);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        .tab:active {
+            transform: scale(0.96);
+        }
+
+        /* ===== 结果卡片 ===== */
+        .result-box {
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            margin-top: 12px;
+            border-left: 5px solid var(--primary);
+            background: #faf8f6;
+        }
+        .result-box .level {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .result-box .level .badge {
+            font-size: 14px;
+            padding: 2px 14px;
+            border-radius: 20px;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+        .result-box .detail {
+            margin-top: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text);
+        }
+        .result-box .detail .highlight {
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+        .result-box .action-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .result-box .action-row .btn {
+            flex: 1;
+            min-width: 80px;
+        }
+
+        /* 报警闪烁 */
+        .alert-flash {
+            animation: alertPulse 0.8s infinite alternate;
+        }
+        @keyframes alertPulse {
+            0% {
+                background-color: #FFF5F5;
+                border-color: #EF5350;
+            }
+            100% {
+                background-color: #FFEBEE;
+                border-color: #C62828;
+            }
+        }
+        .alert-border {
+            border: 2px solid #EF5350 !important;
+        }
+
+        /* ===== 历史曲线 ===== */
+        .chart-wrapper {
+            position: relative;
+            height: 220px;
+            margin: 8px 0 12px;
+            width: 100%;
+        }
+        .history-list {
+            max-height: 280px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0ece8;
+            font-size: 14px;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .history-item .value {
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+        .history-item .time {
+            color: var(--text-light);
+            font-size: 12px;
+        }
+        .history-item .tag {
+            font-size: 12px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: #f0ece8;
+            color: var(--text-light);
+        }
+        .history-empty {
+            text-align: center;
+            color: var(--text-light);
+            padding: 30px 0;
+            font-size: 15px;
+        }
+
+        /* ===== 底部版权 + 免责声明 ===== */
+        .app-footer {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: var(--max-width);
+            width: 100%;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            padding: 10px 16px calc(10px + var(--safe-bottom));
+            text-align: center;
+            border-top: 1px solid #f0ece8;
+            z-index: 20;
+        }
+        .app-footer .disclaimer {
+            font-size: 11px;
+            color: #E53935;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+        .app-footer .names {
+            font-size: 12px;
+            color: var(--text-light);
+            letter-spacing: 0.5px;
+        }
+        .app-footer .names span {
+            font-weight: 500;
+            color: var(--primary-dark);
+        }
+
+        /* ===== 工具类 ===== */
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+        .mt-16 {
+            margin-top: 16px;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-muted {
+            color: var(--text-light);
+            font-size: 13px;
+        }
+        .flex {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .gap-8 {
+            gap: 8px;
+        }
+
+        /* 隐藏滚动条 (但保留功能) */
+        .history-list::-webkit-scrollbar {
+            width: 3px;
+        }
+        .history-list::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 6px;
+        }
+
+        /* 响应式微调 */
+        @media (max-width: 440px) {
+            .app-container {
+                border-radius: 0;
+                padding-bottom: 100px;
+            }
+            body {
+                padding: 0;
+            }
+            .page {
+                padding: 16px 14px 90px;
+            }
+            #loginPage {
+                padding: 30px 16px 60px;
+                border-radius: 0;
+            }
+            .app-footer {
+                font-size: 11px;
+                padding: 8px 12px calc(8px + var(--safe-bottom));
+            }
+            .app-footer .disclaimer {
+                font-size: 10px;
+            }
+        }
+
+        /* 单位切换按钮组 */
+        .unit-toggle {
+            display: flex;
+            background: #f0ece8;
+            border-radius: 8px;
+            padding: 2px;
+            width: fit-content;
+        }
+        .unit-toggle button {
+            border: none;
+            background: transparent;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: all 0.2s;
+        }
+        .unit-toggle button.active {
+            background: var(--card);
+            color: var(--primary-dark);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+        .unit-toggle button:active {
+            transform: scale(0.94);
+        }
+
+        /* ===== 高危因素按钮式选择器 ===== */
+        .risk-tag-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .risk-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #f5f0ec;
+            border-radius: 24px;
+            font-size: 13px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            touch-action: manipulation;
+            border: 2px solid transparent;
+        }
+        .risk-tag:active {
+            transform: scale(0.94);
+        }
+        .risk-tag.selected {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary-dark);
+            font-weight: 500;
+        }
+        .risk-tag .check-mark {
+            display: none;
+            font-size: 14px;
+        }
+        .risk-tag.selected .check-mark {
+            display: inline;
+        }
+        .risk-tag input[type="checkbox"] {
+            display: none;
+        }
+
+        /* ===== 测量方式选择 ===== */
+        .measure-type-group {
+            display: flex;
+            gap: 10px;
+            background: #f5f0ec;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .measure-type-group label {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-light);
+        }
+        .measure-type-group label.active {
+            background: #fff;
+            color: var(--primary-dark);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+        .measure-type-group input[type="radio"] {
+            display: none;
+        }
+
+        /* ===== 语音播报按钮动画 ===== */
+        .speaking {
+            animation: speakPulse 0.6s infinite alternate;
+        }
+        @keyframes speakPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(244, 143, 177, 0.4);
+            }
+            100% {
+                box-shadow: 0 0 0 12px rgba(244, 143, 177, 0);
+            }
+        }
+
+        /* ===== 医院推荐模态框 ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: var(--radius);
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 24px 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-box h3 {
+            font-size: 18px;
+            color: var(--primary-dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-box .close-btn {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+        .modal-box .hospital-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0ece8;
+        }
+        .modal-box .hospital-item:last-child {
+            border-bottom: none;
+        }
+        .modal-box .hospital-item .name {
+            font-weight: 600;
+            color: var(--text);
+        }
+        .modal-box .hospital-item .addr {
+            font-size: 13px;
+            color: var(--text-light);
+            margin: 2px 0;
+        }
+        .modal-box .hospital-item .phone {
+            font-size: 13px;
+            color: var(--primary-dark);
+        }
+        .modal-box .hospital-item .dist {
+            font-size: 12px;
+            color: var(--text-light);
+            background: #f0f0f0;
+            padding: 2px 10px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        .modal-box .map-btn {
+            margin-top: 16px;
+            background: #2196F3;
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .modal-box .map-btn:active {
+            background: #1976D2;
+        }
+        .modal-box .loading {
+            text-align: center;
+            padding: 30px 0;
+            color: var(--text-light);
+        }
+        .modal-box .error-msg {
+            color: #EF6C00;
+            background: #FFF3E0;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .modal-box .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .modal-box .action-buttons .btn {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container" id="app">
+
+        <!-- ========== 登录页 ========== -->
+        <div class="page active" id="loginPage">
+            <div class="logo">👶</div>
+            <h1>黄疸居家监测</h1>
+            <p class="sub">新生儿胆红素智能评估 · 就医提醒</p>
+            <div class="login-card">
+                <div class="form-group">
+                    <label>👤 姓名</label>
+                    <input type="text" id="nameInput" placeholder="请输入姓名" value="">
+                </div>
+                <div class="form-group">
+                    <label>📱 手机号</label>
+                    <input type="tel" id="phoneInput" placeholder="请输入手机号" maxlength="11" value="">
+                </div>
+                <button class="btn btn-primary" id="loginBtn">登录 / 注册</button>
+                <div class="login-error" id="loginError">请填写完整信息</div>
+                <p style="margin-top:14px; font-size:12px; color:#bbb;">演示版本 · 数据仅保存在本地</p>
+            </div>
+        </div>
+
+        <!-- ========== 主界面 ========== -->
+        <div class="page" id="mainPage">
+            <!-- 头部 -->
+            <div class="app-header">
+                <div class="user">👋 欢迎，<strong id="displayName">--</strong></div>
+                <button class="logout-btn" id="logoutBtn">退出</button>
+            </div>
+
+            <!-- Tabs -->
+            <div style="padding:0 18px 0; margin-top: 12px;">
+                <div class="tabs">
+                    <button class="tab active" data-tab="tabInput">📝 录入分析</button>
+                    <button class="tab" data-tab="tabHistory">📈 历史曲线</button>
+                </div>
+            </div>
+
+            <!-- ===== Tab1: 录入分析 ===== -->
+            <div class="tab-content active" id="tabInput" style="padding:0 18px 100px;">
+
+                <!-- 表单卡片 -->
+                <div class="card">
+                    <div class="card-title"><span class="icon">📋</span> 录入胆红素值</div>
+
+                    <div class="form-group">
+                        <label>胆红素值</label>
+                        <div class="flex" style="gap:10px;">
+                            <input type="number" id="bilirubinInput" step="0.1" placeholder="请输入数值" style="flex:2;">
+                            <div class="unit-toggle" id="unitToggle">
+                                <button class="active" data-unit="umol">μmol/L</button>
+                                <button data-unit="mg">mg/dL</button>
+                            </div>
+                        </div>
+                        <div class="hint">参考：1 mg/dL ≈ 17.1 μmol/L</div>
+                    </div>
+
+                    <!-- 测量方式选择 -->
+                    <div class="form-group">
+                        <label>📊 测量方式</label>
+                        <div class="measure-type-group" id="measureTypeGroup">
+                            <label class="active">
+                                <input type="radio" name="measureType" value="经皮胆红素" checked> 经皮胆红素
+                            </label>
+                            <label>
+                                <input type="radio" name="measureType" value="血清胆红素"> 血清胆红素
+                            </label>
+                        </div>
+                        <div class="hint">💡 若您使用黄疸仪测量数据，请选择“经皮胆红素”</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>📅 日龄（天）</label>
+                            <input type="number" id="ageDays" placeholder="如 2" min="0" step="0.5" value="2">
+                        </div>
+                        <div class="form-group">
+                            <label>🧬 胎龄（周）</label>
+                            <input type="number" id="gestAge" placeholder="如 38" min="24" max="42" value="38">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>⚖️ 出生体重（kg）</label>
+                        <input type="number" id="birthWeight" placeholder="如 3.2" min="0.5" max="5.0" step="0.1" value="3.2">
+                    </div>
+
+                    <div class="form-group">
+                        <label>📍 测量部位</label>
+                        <select id="measureSite">
+                            <option value="眉心">眉心</option>
+                            <option value="胸骨正中" selected>胸骨正中</option>
+                        </select>
+                    </div>
+
+                    <!-- 高危因素 -->
+                    <div class="form-group">
+                        <label>⚠️ 高危因素（可多选，自动上调风险）</label>
+                        <div class="risk-tag-group" id="riskTagGroup">
+                            <!-- 由 JS 动态生成 -->
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-block mt-12" id="analyzeBtn">
+                        🔍 AI 分析评估
+                    </button>
+                </div>
+
+                <!-- 结果卡片 -->
+                <div id="resultArea" style="display:none;">
+                    <div class="card" id="resultCard">
+                        <div class="card-title"><span class="icon">📊</span> 评估结果</div>
+                        <div class="result-box" id="resultBox">
+                            <div class="level">
+                                <span id="riskLevelDisplay">--</span>
+                                <span class="badge" id="riskBadge">--</span>
+                            </div>
+                            <div class="detail" id="resultDetail">--</div>
+                            <div class="action-row" id="actionRow">
+                                <button class="btn btn-secondary btn-sm" id="speechBtn">🔊 语音播报</button>
+                                <button class="btn btn-outline btn-sm" id="saveRecordBtn">💾 保存记录</button>
+                            </div>
+                            <!-- 医院推荐按钮 (动态显示) -->
+                            <div id="hospitalBtnContainer" style="display:none; margin-top:10px;">
+                                <button class="btn btn-danger btn-sm" id="hospitalBtn">🏥 附近医院推荐</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 报警提示 -->
+                <div id="alertBanner" style="display:none; background:#FFEBEE; border-left:5px solid #EF5350; border-radius:var(--radius-sm); padding:14px 16px; margin-top:12px; animation: alertPulse 1s infinite alternate;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:28px;">🚨</span>
+                        <div>
+                            <div style="font-weight:700; color:#C62828;">⚠️ 胆红素值异常，建议立即就医！</div>
+                            <div style="font-size:13px; color:#D32F2F;" id="alertDetail">请参照就医建议</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快速就医指征 -->
+                <div class="card" style="background:#faf8f6;">
+                    <div class="card-title" style="font-size:14px;"><span class="icon">🏥</span> 红色警报（立即就医）</div>
+                    <div style="font-size:13px; line-height:1.8; color:var(--text);">
+                        <span style="display:inline-block; background:#FFCDD2; padding:0 8px; border-radius:4px; margin:2px;">精神差</span>
+                        <span style="display:inline-block; background:#FFCDD2; padding:0 8px; border-radius:4px; margin:2px;">上升快 >5mg/dL/天</span>
+                        <span style="display:inline-block; background:#FFCDD2; padding:0 8px; border-radius:4px; margin:2px;">大便陶土色</span>
+                        <span style="display:inline-block; background:#FFCDD2; padding:0 8px; border-radius:4px; margin:2px;">小便茶色</span>
+                        <span style="display:inline-block; background:#FFCDD2; padding:0 8px; border-radius:4px; margin:2px;">黄疸退复现</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Tab2: 历史曲线 ===== -->
+            <div class="tab-content" id="tabHistory" style="padding:0 18px 100px; display:none;">
+                <div class="card">
+                    <div class="card-title"><span class="icon">📈</span> 胆红素趋势</div>
+                    <div class="chart-wrapper">
+                        <canvas id="historyChart"></canvas>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-light); text-align:center;">单位：μmol/L · 红色虚线为当日正常上限</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title" style="font-size:14px;"><span class="icon">📋</span> 历史记录</div>
+                    <div class="history-list" id="historyList">
+                        <div class="history-empty">暂无记录，请先录入数据</div>
+                    </div>
+                    <button class="btn btn-outline btn-sm mt-12" id="clearHistoryBtn" style="width:auto; padding:6px 18px; font-size:12px;">清空所有记录</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ========== 底部版权 + 免责声明 ========== -->
+        <div class="app-footer">
+            <div class="disclaimer">⚠️ 本网页内容仅供参考，身体不适请线下就医</div>
+            <div class="names">饶漪芸 马艺伟 陈依然 程善宇 池蔡彤心</div>
+        </div>
+
+        <!-- ========== 医院推荐模态框 ========== -->
+        <div class="modal-overlay" id="hospitalModal">
+            <div class="modal-box">
+                <button class="close-btn" id="modalCloseBtn">&times;</button>
+                <h3 id="modalTitle">🏥 附近儿科医院推荐</h3>
+                <div id="hospitalList">
+                    <div class="loading">正在获取您的位置...</div>
+                </div>
+                <div id="modalActions" style="display:none;" class="action-buttons">
+                    <button class="btn btn-primary" id="modalMapBtn">🗺️ 打开地图</button>
+                    <button class="btn btn-outline" id="modalCancelBtn">取消</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ============================================================
+        //  核心 JavaScript
+        // ============================================================
+
+        // ---------- 常量 ----------
+        const STORAGE_KEY = 'jaundice_data';
+        const MG_TO_UMOL = 17.1;
+
+        // ---------- 高危因素列表 ----------
+        const RISK_FACTORS = [
+            '24h内黄疸',
+            '母婴溶血',
+            'G6PD缺乏',
+            '胎龄<37周',
+            '头颅大血肿',
+            '纯母乳摄入不足',
+            '窒息/败血症/酸中毒/低蛋白血症'
+        ];
+
+        // ---------- 模拟医院数据（仅在定位成功时使用） ----------
+        const mockHospitals = [
+            { name: '市第一人民医院儿科', addr: 'XX路1号', phone: '010-12345678' },
+            { name: '儿童医院', addr: 'XX街10号', phone: '010-87654321' },
+            { name: '妇幼保健院', addr: 'XX大道20号', phone: '010-11112222' },
+            { name: '社区医院儿科', addr: 'XX路88号', phone: '010-33334444' }
+        ];
+
+        // ---------- 工具函数 ----------
+        function getStorage() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+            } catch { return {}; }
+        }
+
+        function setStorage(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+        function formatTime(ts) {
+            const d = new Date(ts);
+            return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        // ---------- 当前用户 ----------
+        let currentUser = null;
+
+        // ---------- 单位切换 ----------
+        let currentUnit = 'umol';
+
+        document.querySelectorAll('#unitToggle button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('#unitToggle button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentUnit = this.dataset.unit;
+            });
+        });
+
+        // ---------- 测量方式切换 ----------
+        document.querySelectorAll('#measureTypeGroup label').forEach(label => {
+            label.addEventListener('click', function() {
+                document.querySelectorAll('#measureTypeGroup label').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                this.querySelector('input[type="radio"]').checked = true;
+            });
+        });
+
+        function getMeasureType() {
+            const checked = document.querySelector('#measureTypeGroup input[type="radio"]:checked');
+            return checked ? checked.value : '经皮胆红素';
+        }
+
+        // ---------- 登录 ----------
+        const loginPage = document.getElementById('loginPage');
+        const mainPage = document.getElementById('mainPage');
+        const nameInput = document.getElementById('nameInput');
+        const phoneInput = document.getElementById('phoneInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
+        const displayName = document.getElementById('displayName');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        function checkAutoLogin() {
+            const stored = getStorage();
+            if (stored.phone && stored.records !== undefined) {
+                currentUser = {
+                    phone: stored.phone,
+                    name: stored.name || '用户',
+                    records: stored.records || []
+                };
+                showMainPage();
+                return true;
+            }
+            return false;
+        }
+
+        function doLogin(phone, name) {
+            if (!phone || phone.length < 11 || !name.trim()) {
+                loginError.style.display = 'block';
+                return;
+            }
+            loginError.style.display = 'none';
+            const stored = getStorage();
+            let records = [];
+            if (stored.phone === phone) {
+                records = stored.records || [];
+            }
+            currentUser = {
+                phone: phone,
+                name: name.trim(),
+                records: records
+            };
+            setStorage({
+                phone: phone,
+                name: name.trim(),
+                records: records
+            });
+            showMainPage();
+        }
+
+        function showMainPage() {
+            loginPage.classList.remove('active');
+            mainPage.classList.add('active');
+            displayName.textContent = currentUser.name || currentUser.phone;
+            renderHistory();
+            document.getElementById('resultArea').style.display = 'none';
+            document.getElementById('alertBanner').style.display = 'none';
+        }
+
+        function doLogout() {
+            if (confirm('确定要退出吗？本地数据不会丢失。')) {
+                currentUser = null;
+                mainPage.classList.remove('active');
+                loginPage.classList.add('active');
+                nameInput.value = '';
+                phoneInput.value = '';
+                document.getElementById('resultArea').style.display = 'none';
+                document.getElementById('alertBanner').style.display = 'none';
+                if (chartInstance) {
+                    chartInstance.destroy();
+                    chartInstance = null;
+                }
+            }
+        }
+
+        loginBtn.addEventListener('click', function() {
+            doLogin(phoneInput.value.trim(), nameInput.value.trim());
+        });
+        phoneInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') doLogin(phoneInput.value.trim(), nameInput.value.trim());
+        });
+        nameInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') doLogin(phoneInput.value.trim(), nameInput.value.trim());
+        });
+        logoutBtn.addEventListener('click', doLogout);
+
+        // ---------- 生成高危因素标签 ----------
+        function renderRiskTags() {
+            const container = document.getElementById('riskTagGroup');
+            container.innerHTML = '';
+            RISK_FACTORS.forEach(label => {
+                const tag = document.createElement('div');
+                tag.className = 'risk-tag';
+                tag.innerHTML = `
+                    <input type="checkbox" class="risk-factor" value="${label}">
+                    <span class="check-mark">✅</span>
+                    <span>${label}</span>
+                `;
+                tag.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const cb = this.querySelector('.risk-factor');
+                    cb.checked = !cb.checked;
+                    this.classList.toggle('selected', cb.checked);
+                });
+                container.appendChild(tag);
+            });
+        }
+        renderRiskTags();
+
+        // ---------- Tab 切换 ----------
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                const target = this.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
+                const el = document.getElementById(target);
+                if (el) el.style.display = 'block';
+                if (target === 'tabHistory') {
+                    renderHistory();
+                    setTimeout(() => initChart(), 300);
+                }
+            });
+        });
+
+        // ---------- 数据分析引擎 ----------
+        function analyzeBilirubin(bilirubin, unit, ageDays, gestAge, weightKg, riskFactors) {
+            const weightG = weightKg * 1000;
+            let val = bilirubin;
+            if (unit === 'mg') val = bilirubin * MG_TO_UMOL;
+
+            const isPremature = (gestAge < 37 || weightG < 2500);
+            const isTerm = !isPremature;
+
+            if (isTerm) {
+                let normalUpper = Infinity;
+                let emergencyThreshold = Infinity;
+                let emergencyDesc = '';
+
+                if (ageDays < 1) {
+                    normalUpper = 103;
+                    emergencyThreshold = 103;
+                    emergencyDesc = '0-24小时内肉眼见任何黄疸 → 立即就医';
+                } else if (ageDays < 2) {
+                    normalUpper = 171;
+                    emergencyThreshold = 205;
+                    emergencyDesc = '24-72h内 > 205 μmol/L (12 mg/dL) → 立即就医';
+                } else if (ageDays < 3) {
+                    normalUpper = 220;
+                    emergencyThreshold = 205;
+                    emergencyDesc = '24-72h内 > 205 μmol/L (12 mg/dL) → 立即就医';
+                } else if (ageDays < 7) {
+                    normalUpper = 220;
+                    emergencyThreshold = 221;
+                    emergencyDesc = '3-7天 > 221 μmol/L (13 mg/dL) → 立即就医';
+                } else if (ageDays < 14) {
+                    normalUpper = 85.5;
+                    emergencyThreshold = 85.5;
+                    emergencyDesc = '8-14天 > 85.5 μmol/L 或仍明显黄疸 → 建议就医';
+                } else if (ageDays < 28) {
+                    normalUpper = 17.1;
+                    emergencyThreshold = 17.1;
+                    emergencyDesc = '15-28天任何肉眼可见黄疸 → 立即就医';
+                } else {
+                    normalUpper = 17.1;
+                    emergencyThreshold = 17.1;
+                    emergencyDesc = '超过28天仍有黄疸 → 立即就医';
+                }
+
+                let level = '';
+                let suggestion = '';
+                let isEmergency = false;
+
+                if (val >= emergencyThreshold) {
+                    level = '高风险 🔴';
+                    isEmergency = true;
+                    suggestion = '🚨 ' + emergencyDesc;
+                    if (ageDays < 1) suggestion = '🚨 0-24小时内出现黄疸，请立即就医！';
+                    if (ageDays >= 15) suggestion = '🚨 15-28天出现黄疸，请立即就医排查胆道闭锁等疾病！';
+                } else if (val >= normalUpper * 0.95) {
+                    level = '中高风险 🟠';
+                    suggestion = '胆红素接近正常上限，建议24小时内到社区医院复查。注意观察宝宝精神、大便颜色。';
+                    if (ageDays >= 8 && ageDays < 14) {
+                        suggestion = '8-14天胆红素仍偏高，建议就医排查病理性因素。';
+                    }
+                } else if (val >= normalUpper * 0.7) {
+                    level = '中低风险 🟡';
+                    suggestion = '胆红素在正常范围内偏高，建议每12小时复测一次，观察变化趋势。';
+                } else {
+                    level = '低风险 🟢';
+                    suggestion = '胆红素在正常范围内，可每日固定时间监测一次，注意观察宝宝状态。';
+                }
+
+                if (riskFactors && riskFactors.length > 0) {
+                    if (level === '低风险 🟢') {
+                        level = '中低风险 🟡（高危因素）';
+                        suggestion += ' 存在高危因素，建议加强监测。';
+                    } else if (level === '中低风险 🟡') {
+                        level = '中高风险 🟠（高危因素）';
+                        suggestion += ' 存在高危因素，建议24小时内复查。';
+                    } else if (level === '中高风险 🟠') {
+                        level = '高风险 🔴（高危因素）';
+                        suggestion += ' 存在高危因素，建议立即就医。';
+                        isEmergency = true;
+                    }
+                }
+
+                if (ageDays >= 8 && ageDays < 14 && val > 85.5) {
+                    level = '高风险 🔴';
+                    isEmergency = true;
+                    suggestion = '🚨 8-14天胆红素 > 85.5 μmol/L 且仍明显黄疸，建议立即就医排查病理性因素。';
+                }
+                if (ageDays >= 15 && ageDays < 28 && val > 17.1) {
+                    level = '高风险 🔴';
+                    isEmergency = true;
+                    suggestion = '🚨 15-28天出现黄疸，需警惕胆道闭锁，请立即就医！同时观察大便颜色。';
+                }
+
+                return {
+                    level,
+                    suggestion,
+                    isEmergency,
+                    val,
+                    normalUpper,
+                    emergencyThreshold,
+                    isPremature: false,
+                    ageDays,
+                    unit: 'μmol/L',
+                    weightKg
+                };
+            } else {
+                const threshold = getPhototherapyThreshold(weightG, ageDays);
+                if (threshold === null) {
+                    return {
+                        level: '⚠️ 无法评估',
+                        suggestion: '胎龄/体重/日龄数据不完整，请完善信息后重新评估。',
+                        isEmergency: false,
+                        val,
+                        normalUpper: null,
+                        emergencyThreshold: null,
+                        isPremature: true,
+                        ageDays,
+                        unit: 'μmol/L',
+                        weightKg
+                    };
+                }
+                const thresholdVal = threshold * MG_TO_UMOL;
+                let level = '';
+                let suggestion = '';
+                let isEmergency = false;
+
+                if (val >= thresholdVal) {
+                    level = '高风险 🔴（已达光疗阈值）';
+                    isEmergency = true;
+                    suggestion = `🚨 胆红素已达光疗干预阈值（${threshold} mg/dL），建议立即就医！`;
+                } else if (val >= thresholdVal * 0.85) {
+                    level = '中高风险 🟠（接近光疗阈值）';
+                    suggestion = `胆红素接近光疗阈值（${threshold} mg/dL），建议24小时内就医复查。`;
+                } else if (val >= thresholdVal * 0.6) {
+                    level = '中低风险 🟡';
+                    suggestion = '胆红素在监测范围内，建议每12小时复测，注意观察。';
+                } else {
+                    level = '低风险 🟢';
+                    suggestion = '胆红素在安全范围内，可每日监测，注意观察宝宝状态。';
+                }
+
+                if (riskFactors && riskFactors.length > 0) {
+                    if (level === '低风险 🟢') {
+                        level = '中低风险 🟡（高危因素）';
+                        suggestion += ' 存在高危因素，加强监测。';
+                    } else if (level === '中低风险 🟡') {
+                        level = '中高风险 🟠（高危因素）';
+                        suggestion += ' 存在高危因素，建议尽快就医。';
+                    } else if (level === '中高风险 🟠') {
+                        level = '高风险 🔴（高危因素）';
+                        suggestion += ' 存在高危因素，立即就医！';
+                        isEmergency = true;
+                    }
+                }
+                if (weightG < 1500 && val > 0) {
+                    level = '高风险 🔴（极低体重）';
+                    isEmergency = true;
+                    suggestion = '🚨 极低体重儿出现黄疸，需密切监测，建议立即就医！';
+                }
+
+                return {
+                    level,
+                    suggestion,
+                    isEmergency,
+                    val,
+                    normalUpper: thresholdVal,
+                    emergencyThreshold: thresholdVal,
+                    isPremature: true,
+                    ageDays,
+                    unit: 'μmol/L',
+                    weightKg
+                };
+            }
+        }
+
+        function getPhototherapyThreshold(birthWeightG, ageDays) {
+            const table = [
+                { weightMin: 0, weightMax: 999, thresholds: [4, 5, 6, 7, 8, 8] },
+                { weightMin: 1000, weightMax: 1249, thresholds: [5, 6, 7, 9, 10, 10] },
+                { weightMin: 1250, weightMax: 1999, thresholds: [6, 7, 9, 10, 12, 12] },
+                { weightMin: 2000, weightMax: 2299, thresholds: [7, 8, 10, 12, 13, 14] },
+                { weightMin: 2300, weightMax: 2499, thresholds: [9, 12, 14, 16, 17, 18] }
+            ];
+            let row = null;
+            for (const r of table) {
+                if (birthWeightG >= r.weightMin && birthWeightG <= r.weightMax) {
+                    row = r;
+                    break;
+                }
+            }
+            if (!row) return null;
+            let hours = ageDays * 24;
+            let idx = 0;
+            if (hours < 24) idx = 0;
+            else if (hours < 48) idx = 1;
+            else if (hours < 72) idx = 2;
+            else if (hours < 96) idx = 3;
+            else if (hours < 120) idx = 4;
+            else idx = 5;
+            return row.thresholds[idx];
+        }
+
+        // ---------- 处理分析 ----------
+        document.getElementById('analyzeBtn').addEventListener('click', function() {
+            const val = parseFloat(document.getElementById('bilirubinInput').value);
+            if (isNaN(val) || val <= 0) {
+                alert('请输入有效的胆红素值');
+                return;
+            }
+            const age = parseFloat(document.getElementById('ageDays').value) || 0;
+            const gest = parseFloat(document.getElementById('gestAge').value) || 38;
+            const weightKg = parseFloat(document.getElementById('birthWeight').value) || 3.2;
+            if (weightKg < 0.5 || weightKg > 5.0) {
+                alert('请输入合理的出生体重（0.5~5.0 kg）');
+                return;
+            }
+            const site = document.getElementById('measureSite').value;
+
+            const factors = [];
+            document.querySelectorAll('.risk-factor:checked').forEach(cb => factors.push(cb.value));
+
+            const result = analyzeBilirubin(val, currentUnit, age, gest, weightKg, factors);
+
+            const area = document.getElementById('resultArea');
+            area.style.display = 'block';
+
+            document.getElementById('riskLevelDisplay').textContent = result.level;
+            document.getElementById('riskBadge').textContent = result.isEmergency ? '🚨 紧急' : '📊 监测';
+            document.getElementById('resultDetail').innerHTML = `
+                <div><strong>胆红素：</strong>${result.val.toFixed(1)} μmol/L 
+                ${result.normalUpper ? `（正常上限 ${result.normalUpper.toFixed(1)} μmol/L）` : ''}</div>
+                <div style="margin-top:4px;">${result.suggestion}</div>
+                ${result.isPremature ? `<div style="margin-top:4px; background:#E3F2FD; padding:4px 10px; border-radius:8px; font-size:13px;">👶 早产儿 · 参考光疗阈值</div>` : ''}
+                <div style="margin-top:6px; font-size:12px; color:var(--text-light);">日龄 ${age} 天 · 胎龄 ${gest} 周 · 体重 ${weightKg.toFixed(1)} kg</div>
+            `;
+
+            const isHighRisk = result.level.includes('中高风险') || result.level.includes('高风险');
+            const hospitalBtnContainer = document.getElementById('hospitalBtnContainer');
+            if (isHighRisk) {
+                hospitalBtnContainer.style.display = 'block';
+            } else {
+                hospitalBtnContainer.style.display = 'none';
+            }
+
+            const alertBanner = document.getElementById('alertBanner');
+            if (result.isEmergency) {
+                alertBanner.style.display = 'block';
+                document.getElementById('alertDetail').textContent = result.suggestion.replace(/🚨/g, '').trim();
+                playAlarm();
+                document.getElementById('resultBox').classList.add('alert-flash');
+            } else {
+                alertBanner.style.display = 'none';
+                document.getElementById('resultBox').classList.remove('alert-flash');
+                stopAlarm();
+            }
+
+            window._lastResult = {
+                val: result.val,
+                unit: 'μmol/L',
+                ageDays: age,
+                gestAge: gest,
+                birthWeight: weightKg,
+                site: site,
+                riskFactors: factors,
+                level: result.level,
+                suggestion: result.suggestion,
+                isEmergency: result.isEmergency,
+                normalUpper: result.normalUpper,
+                isPremature: result.isPremature,
+                measureType: getMeasureType()
+            };
+        });
+
+        // ---------- 保存记录 ----------
+        document.getElementById('saveRecordBtn').addEventListener('click', function() {
+            if (!window._lastResult) {
+                alert('请先点击「AI分析评估」');
+                return;
+            }
+            if (!currentUser) return;
+            const r = window._lastResult;
+            const record = {
+                id: genId(),
+                timestamp: Date.now(),
+                bilirubin: r.val,
+                unit: r.unit,
+                ageDays: r.ageDays,
+                gestAge: r.gestAge,
+                birthWeight: r.birthWeight,
+                site: r.site,
+                riskFactors: r.riskFactors,
+                level: r.level,
+                suggestion: r.suggestion,
+                isEmergency: r.isEmergency,
+                normalUpper: r.normalUpper,
+                isPremature: r.isPremature,
+                measureType: r.measureType
+            };
+            currentUser.records.push(record);
+            setStorage({
+                phone: currentUser.phone,
+                name: currentUser.name,
+                records: currentUser.records
+            });
+            alert('✅ 记录已保存！');
+            renderHistory();
+            if (document.getElementById('tabHistory').style.display !== 'none') {
+                setTimeout(() => initChart(), 200);
+            }
+        });
+
+        // ---------- 语音播报 ----------
+        let speechSynth = window.speechSynthesis;
+        document.getElementById('speechBtn').addEventListener('click', function() {
+            const detailEl = document.getElementById('resultDetail');
+            const text = detailEl.textContent.trim();
+            if (!text || text === '--') {
+                alert('请先进行AI分析');
+                return;
+            }
+            if (speechSynth.speaking) {
+                speechSynth.cancel();
+            }
+            const msg = new SpeechSynthesisUtterance();
+            msg.text = '新生儿黄疸评估结果。' + text;
+            msg.lang = 'zh-CN';
+            msg.rate = 0.9;
+            msg.pitch = 1.1;
+            msg.volume = 1;
+            speechSynth.speak(msg);
+            this.classList.add('speaking');
+            msg.onend = () => { this.classList.remove('speaking'); };
+            msg.onerror = () => { this.classList.remove('speaking'); };
+        });
+
+        // ---------- 声音报警 ----------
+        let alarmCtx = null;
+        let alarmOsc = null;
+        let alarmGain = null;
+        let alarmInterval = null;
+
+        function playAlarm() {
+            try {
+                if (!alarmCtx) {
+                    alarmCtx = new(window.AudioContext || window.webkitAudioContext)();
+                }
+                if (alarmCtx.state === 'suspended') {
+                    alarmCtx.resume();
+                }
+                alarmOsc = alarmCtx.createOscillator();
+                alarmGain = alarmCtx.createGain();
+                alarmOsc.type = 'square';
+                alarmOsc.frequency.value = 880;
+                alarmGain.gain.value = 0.15;
+                alarmOsc.connect(alarmGain);
+                alarmGain.connect(alarmCtx.destination);
+                alarmOsc.start();
+                let toggle = true;
+                alarmInterval = setInterval(() => {
+                    if (alarmOsc) {
+                        alarmOsc.frequency.value = toggle ? 880 : 660;
+                        alarmGain.gain.value = toggle ? 0.15 : 0.08;
+                        toggle = !toggle;
+                    }
+                }, 400);
+                setTimeout(() => {
+                    stopAlarm();
+                }, 15000);
+            } catch (e) {
+                console.log('报警音频初始化失败:', e);
+            }
+        }
+
+        function stopAlarm() {
+            if (alarmInterval) {
+                clearInterval(alarmInterval);
+                alarmInterval = null;
+            }
+            if (alarmOsc) {
+                try {
+                    alarmOsc.stop();
+                    alarmOsc.disconnect();
+                } catch (e) {}
+                alarmOsc = null;
+            }
+            if (alarmGain) {
+                try { alarmGain.disconnect(); } catch (e) {}
+                alarmGain = null;
+            }
+        }
+
+        // ---------- 历史记录渲染 ----------
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            if (!currentUser || !currentUser.records || currentUser.records.length === 0) {
+                container.innerHTML = '<div class="history-empty">暂无记录，请先录入数据</div>';
+                return;
+            }
+            const sorted = [...currentUser.records].sort((a, b) => b.timestamp - a.timestamp);
+            let html = '';
+            sorted.forEach(r => {
+                const time = formatTime(r.timestamp);
+                const val = r.bilirubin ? r.bilirubin.toFixed(1) : '--';
+                const isEmer = r.isEmergency ? '🔴' : '✅';
+                const weight = r.birthWeight ? r.birthWeight.toFixed(1) + 'kg' : '--';
+                const measure = r.measureType || '经皮';
+                html += `
+                    <div class="history-item">
+                        <div>
+                            <span class="value">${val} ${r.unit || 'μmol/L'}</span>
+                            <span class="tag">${r.level || '--'}</span>
+                            ${isEmer}
+                            <span style="font-size:11px; color:var(--text-light); margin-left:4px;">${measure}</span>
+                            <span style="font-size:11px; color:var(--text-light); margin-left:4px;">${weight}</span>
+                        </div>
+                        <div class="time">${time}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // ---------- 图表 ----------
+        let chartInstance = null;
+
+        function initChart() {
+            const canvas = document.getElementById('historyChart');
+            if (!canvas) return;
+            const parent = canvas.parentElement;
+            if (!parent) return;
+            let width = parent.offsetWidth;
+            if (width === 0) {
+                parent.style.width = '100%';
+                width = parent.offsetWidth || 300;
+            }
+            if (chartInstance) {
+                chartInstance.destroy();
+                chartInstance = null;
+            }
+            if (!currentUser || !currentUser.records || currentUser.records.length === 0) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ccc';
+                ctx.font = '14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('暂无数据', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+            const sorted = [...currentUser.records].sort((a, b) => a.timestamp - b.timestamp);
+            const labels = sorted.map(r => formatTime(r.timestamp));
+            const data = sorted.map(r => r.bilirubin || 0);
+            const normalUpper = sorted.map(r => r.normalUpper || null);
+
+            const ctx = canvas.getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '胆红素 (μmol/L)',
+                        data: data,
+                        borderColor: '#EC407A',
+                        backgroundColor: 'rgba(236, 64, 122, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#EC407A',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        tension: 0.3,
+                        fill: true,
+                    }, {
+                        label: '正常上限',
+                        data: normalUpper,
+                        borderColor: 'rgba(255, 99, 132, 0.4)',
+                        borderWidth: 2,
+                        borderDash: [6, 4],
+                        pointRadius: 0,
+                        fill: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                boxWidth: 12,
+                                padding: 10,
+                                font: { size: 11 }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.04)' },
+                            ticks: { font: { size: 11 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 10 },
+                                maxRotation: 30,
+                                autoSkip: true,
+                                maxTicksLimit: 10
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    }
+                }
+            });
+            chartInstance.update();
+        }
+
+        // ---------- 清空历史 ----------
+        document.getElementById('clearHistoryBtn').addEventListener('click', function() {
+            if (!currentUser) return;
+            if (currentUser.records.length === 0) {
+                alert('暂无记录可清空');
+                return;
+            }
+            if (confirm('确定要清空所有历史记录吗？此操作不可撤销。')) {
+                currentUser.records = [];
+                setStorage({
+                    phone: currentUser.phone,
+                    name: currentUser.name,
+                    records: []
+                });
+                renderHistory();
+                if (document.getElementById('tabHistory').style.display !== 'none') {
+                    setTimeout(() => initChart(), 200);
+                }
+            }
+        });
+
+        // ---------- 医院推荐功能 ----------
+        const hospitalModal = document.getElementById('hospitalModal');
+        const hospitalList = document.getElementById('hospitalList');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalActions = document.getElementById('modalActions');
+        const modalMapBtn = document.getElementById('modalMapBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+        document.getElementById('hospitalBtn').addEventListener('click', function() {
+            hospitalModal.classList.add('active');
+            hospitalList.innerHTML = '<div class="loading">正在获取您的位置...</div>';
+            modalActions.style.display = 'none';
+            modalTitle.textContent = '🏥 附近儿科医院推荐';
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const { latitude, longitude } = pos.coords;
+                        showHospitalList(latitude, longitude);
+                    },
+                    (err) => {
+                        console.warn('定位失败:', err.message);
+                        showLocationFailed();
+                    }, {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 60000
+                    }
+                );
+            } else {
+                showLocationFailed();
+            }
+        });
+
+        function showHospitalList(lat, lng) {
+            modalTitle.textContent = '🏥 附近儿科医院推荐';
+            let html = `<div style="margin-bottom:10px; font-size:14px; color:var(--text-light);">📍 您的位置已获取，以下为附近医院（模拟数据）</div>`;
+            const hospitals = mockHospitals.map((h) => {
+                const dist = (Math.random() * 3 + 0.5).toFixed(1);
+                return { ...h, dist: dist };
+            });
+            hospitals.forEach(h => {
+                html += `
+                    <div class="hospital-item">
+                        <div class="name">${h.name}</div>
+                        <div class="addr">📍 ${h.addr}</div>
+                        <div class="phone">📞 ${h.phone}</div>
+                        <span class="dist">🚗 约 ${h.dist} km</span>
+                    </div>
+                `;
+            });
+            html += `
+                <button class="map-btn" id="modalMapBtnDirect">🗺️ 打开地图搜索附近医院</button>
+            `;
+            hospitalList.innerHTML = html;
+            modalActions.style.display = 'none';
+
+            const mapBtnDirect = document.getElementById('modalMapBtnDirect');
+            if (mapBtnDirect) {
+                mapBtnDirect.addEventListener('click', function() {
+                    if (lat && lng) {
+                        window.open(`https://m.amap.com/search?query=儿科医院&loc=${lng},${lat}&coordinate=gaode`, '_blank');
+                    } else {
+                        window.open('https://m.amap.com/search?query=儿科医院', '_blank');
+                    }
+                });
+            }
+        }
+
+        function showLocationFailed() {
+            modalTitle.textContent = '📍 无法获取位置';
+            hospitalList.innerHTML = `
+                <div style="padding:10px 0; color:#EF6C00; font-size:15px;">
+                    ⚠️ 未能获取您的位置，无法显示附近医院列表。
+                </div>
+                <div style="margin-top:10px; font-size:14px; color:var(--text-light);">
+                    您可以直接打开地图搜索附近的儿科医院。
+                </div>
+            `;
+            modalActions.style.display = 'flex';
+            modalMapBtn.onclick = function() {
+                window.open('https://m.amap.com/search?query=儿科医院', '_blank');
+                hospitalModal.classList.remove('active');
+            };
+            modalCancelBtn.onclick = function() {
+                hospitalModal.classList.remove('active');
+            };
+        }
+
+        modalCloseBtn.addEventListener('click', function() {
+            hospitalModal.classList.remove('active');
+        });
+        hospitalModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+
+        // ---------- 初始化 ----------
+        (function init() {
+            if (!checkAutoLogin()) {
+                loginPage.classList.add('active');
+                mainPage.classList.remove('active');
+            }
+        })();
+
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (chartInstance && document.getElementById('tabHistory').style.display !== 'none') {
+                    chartInstance.resize();
+                }
+            }, 300);
+        });
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && speechSynth.speaking) {
+                speechSynth.cancel();
+                document.getElementById('speechBtn').classList.remove('speaking');
+            }
+        });
+
+        console.log('👶 新生儿黄疸居家监测系统 v1.6 (微信适配 + 登录保护)');
+        console.log('📚 数据参考：足月儿Bhutani曲线 + 早产儿光疗阈值');
+        console.log('❤️ 设计：饶漪芸 马艺伟 陈依然 程善宇 池蔡彤心');
+    </script>
+</body>
+</html>
